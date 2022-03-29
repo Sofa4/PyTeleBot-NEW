@@ -1,10 +1,36 @@
 from telebot import types
 
+# -----------------------------------------------------------------------
+class KeyboardButton:
+    def __init__(self, name, handler=None):
+        self.name = name
+        self.handler = handler
+
+# -----------------------------------------------------------------------
+
+class Users:
+    activeUsers = {}
+
+    def __init__(self, chat_id, json):
+        self.id = json["id"]
+        self.isBot = json["is_bot"]
+        self.firstName = json["first_name"]
+        self.userName = json["username"]
+        self.languageCode = json["language_code"]
+
+        self.__class__.activeUsers[chat_id] = self
+
+    def __str__(self):
+        return f"Name user: {self.firstName}   id: {self.userName}   lang: {self.languageCode}"
+
+    @classmethod
+    def getUser(cls, chat_id):
+        return cls.activeUsers.get(chat_id)
 
 # -----------------------------------------------------------------------
 class Menu:
     hash = {}  # тут будем накапливать все созданные экземпляры класса
-    cur_menu = None  # тут будет находиться текущий экземпляр класса, текущее меню
+    cur_menu = {}  # тут будет находиться текущий экземпляр класса, текущее меню для каждого пользователя
     extendedParameters = {}  # это место хранения дополнительных параметров для передачи в inline кнопки
     # ПЕРЕПИСАТЬ для хранения параметров привязанных к chat_id и названию кнопки
 

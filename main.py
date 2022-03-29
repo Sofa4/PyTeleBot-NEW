@@ -8,35 +8,40 @@ from telebot import types
 import requests
 import bs4
 import BotGames  # бот-игры, файл BotGames.py
-from menuBot import Menu  # в этом модуле есть код, создающий экземпляры классов описывающих моё меню
+from menuBot import Menu, Users  # в этом модуле есть код, создающий экземпляры классов описывающих моё меню
 import DZ  # домашнее задание от первого урока
 
 bot = telebot.TeleBot('5105972662:AAG24fr382U1_hosO4Zrb-tv_BTakAV1MPk')  # Создаем экземпляр бота
-game21 = None  # класс игры в 21, экземпляр создаём только при начале игры
+#game21 = None  # класс игры в 21, экземпляр создаём только при начале игры
 
 
 # -----------------------------------------------------------------------
 # Функция, обрабатывающая команды
 @bot.message_handler(commands="start")
 def command(message, res=False):
+    chat_id = message.chat.id
     txt_message = f"Привет, {message.from_user.first_name}! Я тестовый бот для курса программирования на языке Python"
-    bot.send_message(message.chat.id, text=txt_message, reply_markup=Menu.getMenu("Главное меню").markup)
+    bot.send_message(message.chat.id, text=txt_message, reply_markup=Menu.getMenu(chat_id, "Главное меню").markup)
 
 
 # -----------------------------------------------------------------------
 # Получение сообщений от юзера
 @bot.message_handler(content_types=['text'])
 def get_text_messages(message):
-    global game21
 
     chat_id = message.chat.id
     ms_text = message.text
+
+    cur_user = Users.getUser(chat_id)
+    if cur_user == None:
+        cur_user = Users(chat_id, message.json["from"])
 
     result = goto_menu(chat_id, ms_text)  # попытаемся использовать текст как команду меню, и войти в него
     if result == True:
         return  # мы вошли в подменю, и дальнейшая обработка не требуется
 
-    if Menu.cur_menu != None and ms_text in Menu.cur_menu.buttons:  # проверим, что команда относится к текущему меню
+    cur_menu = Menu.getCurMenu(chat_id)
+    if cur_menu != None and ms_text in cur_menu.buttons:  # проверим, что команда относится к текущему меню
 
         if ms_text == "Помощь":
             send_help(chat_id)
@@ -53,8 +58,8 @@ def get_text_messages(message):
         elif ms_text == "Угадай кто?":
             get_ManOrNot(chat_id)
 
-        elif ms_text == "Камень, ножницы, бумага":
-            BotGames.game_knb(chat_id)
+        #elif ms_text == "Камень, ножницы, бумага":
+            #game_knb(chat_id)
 
         elif ms_text == "Карту!":
             if game21 == None:  # если мы случайно попали в это меню, а объекта с игрой нет
@@ -148,6 +153,10 @@ def send_help(chat_id):
     img = open('author.jpg', 'rb')
     bot.send_photo(chat_id, img, reply_markup=markup)
 
+    bot.send_message(chat_id, "Активные пользователи чат-бота:")
+    for el in Users.activeUsers:
+        bot.send_message(chat_id, Users.activeUsers[el])
+
 # -----------------------------------------------------------------------
 def send_film(chat_id):
     film = get_randomFilm()
@@ -229,6 +238,7 @@ def get_randomFilm():
 
     return infoFilm
 # ---------------------------------------------------------------------
+#def game_knb():
 
 
 bot.polling(none_stop=True, interval=0)  # Запускаем бота
